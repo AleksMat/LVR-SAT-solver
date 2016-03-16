@@ -14,6 +14,8 @@ class Atom:
         return False
     def __eq__(self, other):
         return self.name == other.name and self.isTrue == other.isTrue
+    def __repr__(self):
+        return "{}{}".format(  "" if self.isTrue else "NOT ", self.name )
 
 class Clause:
     def __init__(self):
@@ -27,6 +29,8 @@ class Clause:
         return len(self.atoms) == 1
     def __lt__(self, other):
         return len(self.atoms) < len(other.atoms)
+    def __repr__(self):
+        return "( " + " OR ".join([at.__repr__() for at in self.atoms ]) + " )"
 
 class Valuation:
     def __init__(self):
@@ -38,28 +42,31 @@ class Valuation:
         self.assigned = self.saved
     def add( self, pAtom ):
         if( pAtom.name in self.assigned ):
-            raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
+            return
+            #raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
         self.assigned[ pAtom.name ] = pAtom.isTrue
         
 
 class CNF:
     def __init__(self):
         self.clauses = []
-        self.saved = []
+        self.guessHistory = []
     def add( self, pClause ) :
         #maintain sorted clauses (by length)
         bisect.insort( self.clauses, pClause )
-    def save(self):
-        self.saved = self.clauses
-    def load(self):
-        self.clauses = self.saved
+    def prepareForNewGuess(self):
+        self.guessHistory.append(self.clauses)
+    def undoGuess(self):
+        if not self.guessHistory:
+            raise Exception( "" )
+        self.clauses = self.guessHistory.pop()
     def addUnit(self, pName, pIsTrue):
         c = Clause()
         c.add(Atom( pName, pIsTrue ))
         self.clauses.insert(0,c)
     def clearUnits(self, pValuation):
         if not self.clauses:
-            return
+            return False
         newUnits = []
         while self.clauses and self.clauses[0].isUnit():
             clause = self.clauses.pop(0)
@@ -67,7 +74,7 @@ class CNF:
             pValuation.add( clause.atoms[0] )
         newUnits.sort()
         if not newUnits:
-            return
+            return False
         tbd = []
         for i in range(0,len(self.clauses)):
             otherClause = self.clauses[i]
@@ -90,6 +97,8 @@ class CNF:
         #remove marked clauses
         while tbd:
             self.clauses.pop( tbd.pop() )
+
+        return True
                 
             
             
@@ -98,6 +107,8 @@ class CNF:
             if clause.isNotSat():
                 return True
         return False
+    def __repr__(self):
+        return "[ " + " AND ".join([cl.__repr__() for cl in self.clauses ]) + " ]"
 
 class SATSolver:
     def __init__(self):
@@ -118,7 +129,12 @@ def test():
     c.add( Atom("s",False) )
 
     a.add( c )
+    print("a before clear: {}".format(a))
+
+    
     b= Valuation()
     a.clearUnits(b)
+
+    print("a after clear: {}".format(a))
 
     
