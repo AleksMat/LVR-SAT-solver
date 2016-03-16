@@ -137,4 +137,24 @@ def test():
 
     print("a after clear: {}".format(a))
 
+
+def dimacsTransformer(file):  # transforms SAT from Dimacs form to CNF class, input is file name
+    f=open(file,'r')
+    cnf=CNF()
+    num=0
+    for line in f:
+        if num>=3:
+            c=Clause()
+            s=line.strip().split()
+            for j in range (len(s)-1):
+                if s[j][0]=='-':
+                    c.add( Atom(s[j][1:],False))
+                else:
+                    c.add( Atom(s[j],True))
+        num+=1
+    f.close()
+    return cnf
+
+#dimacsTransformer('Samples/sudoku1-2.txt')
+dimacsTransformer('Samples/sudoku2.txt')
     
