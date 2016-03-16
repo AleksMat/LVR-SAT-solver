@@ -1,4 +1,5 @@
 import bisect
+import time
 
 class Atom:
     def __init__(self, pName, pIsTrue):
@@ -23,7 +24,7 @@ class Clause:
     def add( self, pAtom ) :
         #maintain sorted atoms (by name) for fast removal
         bisect.insort( self.atoms, pAtom )
-    def isNonSat(self):
+    def isNotSat(self):
         return not self.atoms
     def isUnit(self):
         return len(self.atoms) == 1
@@ -35,17 +36,21 @@ class Clause:
 class Valuation:
     def __init__(self):
         self.assigned = dict()
-        self.saved = dict()
-    def save(self):
-        self.saved = self.assigned
-    def load(self):
-        self.assigned = self.saved
+        self.guessHistory = []
+    def prepareForNewGuess(self):
+        self.guessHistory.append(self.assigned)
+    def undoGuess(self):
+        if not self.guessHistory:
+            raise Exception( "No guesses to undo." )
+        self.assigned = self.guessHistory.pop()
     def add( self, pAtom ):
         if( pAtom.name in self.assigned ):
             if pAtom.isTrue != self.assigned[pAtom.name].isTrue:
                 #raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
                 raise Exception("Valuation conflict exception. " +  pAtom.name + " has been assigned both truth values." )
         self.assigned[ pAtom.name ] = pAtom.isTrue
+    def __repr__(self):
+        return self.assigned.__repr__()
         
 
 class CNF:
@@ -100,9 +105,13 @@ class CNF:
             self.clauses.pop( tbd.pop() )
 
         return True
-                
-            
-            
+
+    def chooseAtom(self):
+        # for now, take first, assume CNF nonempty and first clause nonempty
+        return self.clauses[0].atoms[0]
+    
+    def isEmpty(self):
+        return not self.clauses            
     def isNonSat(self):
         for clause in self.clauses:
             if clause.isNotSat():
@@ -114,17 +123,30 @@ class CNF:
 class SATSolver:
     def __init__(self):
         pass
-    def __call__( self, pCNF ):
-        retVal = Valuation()
-
-        while( 1 ):
+    def __call__( self, pCNF, retVal = Valuation() ):
+        while( True ):
             pCNF.clearUnits(retVal)
-            if pCNF.isNonSat():
+            if pCNF.isEmpty():
+                return retVal
+            elif pCNF.isNonSat():
                 #we fail
-                return False
-            
+                return None
+            #guess
+            guessAtom = pCNF.chooseAtom();
+            pCNF.prepareForNewGuess()
+            retVal.prepareForNewGuess()
+            pCNF.addUnit( guessAtom.name, guessAtom.isTrue )
+            tempRet = self.__call__( pCNF, retVal )
+            if tempRet != None:
+                return tempRet
+            pCNF.undoGuess()
+            retVal.undoGuess()
+            pCNF.prepareForNewGuess()
+            retVal.prepareForNewGuess()
+            pCNF.addUnit( guessAtom.name, not guessAtom.isTrue )
+            return self.__call__( pCNF, retVal )      
 
-        return retVal
+        return None
 
 def test():
     a = CNF()
@@ -136,17 +158,24 @@ def test():
     c.add( Atom("s",False) )
 
     a.add( c )
+    q = a
     print("a before clear: {}".format(a))
 
     
     b= Valuation()
-    a.clearUnits(b)
+    #a.clearUnits(b)
 
     print("a after clear: {}".format(a))
 
+    ss = SATSolver()
 
-def dimacsTransformer(file):  # transforms SAT from Dimacs form to CNF class, input is file name
-    f=open(file,'r')
+    rv = ss(q)
+    print( rv )
+
+
+
+def dimacsTransformer(pFile):  # transforms SAT from Dimacs form to CNF class, input is file name
+    f=open(pFile,'r')
     cnf=CNF()
     num=0
     for line in f:
@@ -158,10 +187,19 @@ def dimacsTransformer(file):  # transforms SAT from Dimacs form to CNF class, in
                     c.add( Atom(s[j][1:],False))
                 else:
                     c.add( Atom(s[j],True))
+            cnf.add(c)
         num+=1
     f.close()
     return cnf
 
-#dimacsTransformer('Samples/sudoku1-2.txt')
-dimacsTransformer('Samples/sudoku2.txt')
+def testConvert():
+    t = time.time()
+    a = dimacsTransformer('Samples/sudoku1.txt')
+    t = time.time() - t
+    ss = SATSolver()
+    
+    print(ss(a))
+
+#dimacsTransformer('Samples/sudoku1.txt')
+#dimacsTransformer('Samples/sudoku2.txt')
     
