@@ -155,6 +155,6 @@ def dimacsTransformer(file):  # transforms SAT from Dimacs form to CNF class, in
     f.close()
     return cnf
 
-#dimacsTransformer('Samples/sudoku1-2.txt')
-dimacsTransformer('Samples/sudoku2.txt')
+dimacsTransformer('Samples/sudoku1-2.txt')
+#dimacsTransformer('Samples/sudoku2.txt')
     
