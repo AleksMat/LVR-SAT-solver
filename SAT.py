@@ -42,8 +42,9 @@ class Valuation:
         self.assigned = self.saved
     def add( self, pAtom ):
         if( pAtom.name in self.assigned ):
-            return
-            #raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
+            if pAtom.isTrue != self.assigned[pAtom.name].isTrue:
+                #raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
+                raise Exception("Valuation conflict exception. " +  pAtom.name + " has been assigned both truth values." )
         self.assigned[ pAtom.name ] = pAtom.isTrue
         
 
@@ -58,7 +59,7 @@ class CNF:
         self.guessHistory.append(self.clauses)
     def undoGuess(self):
         if not self.guessHistory:
-            raise Exception( "" )
+            raise Exception( "No guesses to undo." )
         self.clauses = self.guessHistory.pop()
     def addUnit(self, pName, pIsTrue):
         c = Clause()
@@ -115,7 +116,13 @@ class SATSolver:
         pass
     def __call__( self, pCNF ):
         retVal = Valuation()
-        ## DO STUFF
+
+        while( 1 ):
+            pCNF.clearUnits(retVal)
+            if pCNF.isNonSat():
+                #we fail
+                return False
+            
 
         return retVal
 
