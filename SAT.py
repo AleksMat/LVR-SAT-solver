@@ -45,7 +45,7 @@ class Valuation:
         self.assigned = self.guessHistory.pop()
     def add( self, pAtom ):
         if( pAtom.name in self.assigned ):
-            if pAtom.isTrue != self.assigned[pAtom.name].isTrue:
+            if pAtom.isTrue != self.assigned[pAtom.name]:
                 #raise Exception("Multiple valuation exception. " +  pAtom.name + " has already been assigned a value." )
                 raise Exception("Valuation conflict exception. " +  pAtom.name + " has been assigned both truth values." )
         self.assigned[ pAtom.name ] = pAtom.isTrue
