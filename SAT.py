@@ -164,18 +164,24 @@ def satSolver(cnf):
         
 def dimacsInput(pFile):  # transforms SAT from Dimacs form to CNF class, input is file name
     f=open(pFile,'r')
+    s = []
     for line in f:
         if line[0]=='p':
             s=line.strip().split()
             cnf=CNF(int(s[2]),int(s[3]))
+            s = []
         elif line[0]!='c':
-            s=line.strip().split()
+            s += line.strip().split()
+            if s[-1] != '0':
+                continue
+            
             for j in range (len(s)-1):
                 if s[j][0]=='-':
                     s[j]=(False,int(s[j][1:])-1)
                 else:
                     s[j]=(True,int(s[j])-1)
             cnf.add(s[:-1])
+            s = []
     f.close()
     return cnf
 
@@ -205,7 +211,7 @@ def check(name,ans): #compares my output to correct output
 def solve(n=0): #
 
     tests=['test1','test2','sudoku1','sudoku2'] #list of test files
-    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4' ] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
+    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4','zebra_v155_c1135' ] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
     
     pfile='Samples/'+tests[n]+'.txt'
     t = time.time()
