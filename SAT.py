@@ -148,7 +148,7 @@ class SATSolver:
 
         return None
 
-def test():
+'''def test():
     a = CNF()
     a.addUnit("q",True)
     a.addUnit("s",True)
@@ -170,16 +170,15 @@ def test():
     ss = SATSolver()
 
     rv = ss(q)
-    print( rv )
+    print( rv )'''
 
 
 
 def dimacsTransformer(pFile):  # transforms SAT from Dimacs form to CNF class, input is file name
     f=open(pFile,'r')
     cnf=CNF()
-    num=0
     for line in f:
-        if num>=3:
+        if line[0]!='c' and line[0]!='p':
             c=Clause()
             s=line.strip().split()
             for j in range (len(s)-1):
@@ -188,18 +187,21 @@ def dimacsTransformer(pFile):  # transforms SAT from Dimacs form to CNF class, i
                 else:
                     c.add( Atom(s[j],True))
             cnf.add(c)
-        num+=1
     f.close()
     return cnf
 
-def testConvert():
-    t = time.time()
-    a = dimacsTransformer('Samples/sudoku1.txt')
-    t = time.time() - t
-    ss = SATSolver()
-    
-    print(ss(a))
 
-#dimacsTransformer('Samples/sudoku1.txt')
-#dimacsTransformer('Samples/sudoku2.txt')
+
+def solve(n=0): #
+    tests=['test1','sudoku1','sudoku2'] #list of test files
+    
+    pfile='Samples/'+tests[n]+'.txt'
+    t = time.time()
+    a = dimacsTransformer(pfile)
+    ans=SATSolver()(a)
+    t = time.time() - t
+    
+    print(ans,t)
+
+solve(0)
     
