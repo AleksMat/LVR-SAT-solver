@@ -192,6 +192,7 @@ def dimacsOutput(cnf):
 def check(name,ans): #compares my output to correct output
     pfile='Samples/'+name+'_solution.txt'
     f=open(pfile,'r')
+    t= ''
     for line in f:
         s=line.strip()
         if s==ans:
@@ -200,12 +201,11 @@ def check(name,ans): #compares my output to correct output
             t='Answer is incorrect or there are multiple solutions.'
     f.close()
     return t
-    
-    
-global ti
 
 def solve(n=0): #
-    tests=['test1','test2','test3','test4','test5','sudoku1','sudoku2'] #list of test files
+
+    tests=['test1','test2','sudoku1','sudoku2'] #list of test files
+    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4' ] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
     
     pfile='Samples/'+tests[n]+'.txt'
     t = time.time()
@@ -215,15 +215,35 @@ def solve(n=0): #
     cnf.prepare()
     ans=satSolver(cnf)
     if ans==None:
-        ans='No solution'
+        ans='NOT SATISFIABLE'
     t = time.time() - t
 
     print('Answer:')
     print(ans)
+
+    f = open(pfile[:-4]+'_solution.txt','w')
+    print(ans,file = f)
+    
     print('Time in seconds:')
     print(t)
     
     print(check(tests[n],ans))
 
+
 solve(4)
     
+
+def solveFile( fname ): # file should end in .txt
+    t = time.time()
+    cnf = dimacsInput(fname)
+    ans=satSolver(cnf)
+    t = time.time() - t
+
+    outName = fname[:-4]+'_solution.txt'
+
+
+    print('Answer found in {} seconds. Written to: {}'.format(t,fname))
+
+    f = open(outName,'w')
+    print(ans if ans != None else "NOT SATISFIABLE" ,file = f)    
+
