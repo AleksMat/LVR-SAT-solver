@@ -11,6 +11,9 @@ class CNF:
         self.clauses=[]
         self.sol=[True for i in range (vnum)]
         self.hist=[]
+        self.end_var=[]
+        self.end_clauses=[]
+        self.count=0 ###
 
     def add(self, c): # adds clause c
         n=len(self.clauses)
@@ -27,33 +30,58 @@ class CNF:
         for v in self.clauses[n].keys():
             self.var[self.clauses[n][v]][v][n]=True
 
+    def prepare(self):
+        for v in self.state_var.keys():
+            if len(self.var[False][v])==0 or len(self.var[True][v])==0:
+                if len(self.var[False][v])==0:
+                    self.end_var.append((v,True))
+                else:
+                    self.end_var.append((v,False))
+        for c in self.state_clauses.keys():
+            if len(self.clauses[c])<=1:
+                self.end_clauses.append(c)
+        
+    
     def __repr__(self):
-        s=str(self.state_var)+'\n'
+        s='------------------\n'
+        s+=str(self.state_var)+'\n'
         s+=str(self.state_clauses)+'\n'
         s+=str(self.var)+'\n'
         s+=str(self.clauses)+'\n'
-        s+=str(self.sol)
+        s+=str(self.sol)+'\n'
+        s+=str(self.end_var)+'\n'
+        s+=str(self.end_clauses)+'\n'
+        s+='------------------'
         return s
 
-    def set_val(self,b,v,c0=-1):
+    def set_val(self,v,b):
         del self.state_var[v]
         self.hist.append((0,v))
         self.sol[v]=b
+        #print(self.var[b],v,b)
         for c in self.var[b][v].keys():
             try:
                 del self.state_clauses[c]
                 self.hist.append((1,c))
                 for u in self.clauses[c].keys():
                     if u!=v:
-                        del self.var[self.clauses[c][u]][u][c]
-                        self.hist.append((2,self.clauses[c][u],u,c))
+                        b0=self.clauses[c][u]
+                        del self.var[b0][u][c]
+                        self.hist.append((2,b0,u,c))
+                        if len(self.var[b0][u])==0 and len(self.var[not b0][u])!=0:
+                            self.end_var.append((u,not b0))
             except:
                 pass
         for c in self.var[not b][v].keys():
             del self.clauses[c][v]
             self.hist.append((3,c,v,not b))
+            if len(self.clauses[c])<=1:
+                self.end_clauses.append(c)
 
     def undo(self,h):
+        self.end_var=[]
+        self.end_clauses=[]
+        self.count+=len(self.hist)-h
         while len(self.hist)>h:
             g=self.hist[-1]
             if g[0]==0:
@@ -67,37 +95,47 @@ class CNF:
             self.hist.pop()
         
     def select(self):
-        return (random.choice([True,False]),random.choice(list(self.state_var.keys())))
-        
-        
+        m=-1
+        for v in self.state_var.keys():
+            m1=len(self.var[True][v])
+            m2=len(self.var[False][v])
+            if m1+m2>m:
+                m=m1+m2
+                u=v
+                t=(m1>m2)
+        return (t,u)
+                
+        #return (False,list(self.state_var.keys())[0])
+        #return (random.choice([True,False]),random.choice(list(self.state_var.keys())))
+
+      
 def satSolver(cnf):
-    if len(cnf.state_var)==0:
-        return dimacsOutput(cnf)
-    t=True
-    while t:  #trivial simplifications
-        t=False
-        for v in list(cnf.state_var.keys()):
-            l1=len(cnf.var[False][v])
-            l2=len(cnf.var[True][v])
-            if (l1==0 and l2>0) or (l1>0 and l2==0):
-                t=True
-            if l1==0:
-                cnf.set_val(True,v)
-            elif l2==0:
-                cnf.set_val(False,v)
-                        
-        for c in list(cnf.state_clauses.keys()):
-            if len(cnf.clauses[c])==0:
-                return None
-            if len(cnf.clauses[c])==1:
-                t=True
-                try:
-                    del cnf.state_clauses[c]
-                    cnf.hist.append((1,c))
-                    for v in cnf.clauses[c].keys():
-                        cnf.set_val(cnf.clauses[c][v],v)
-                except:
-                    pass
+    #print(cnf,'!!!')
+    while len(cnf.end_var)>0 or len(cnf.end_clauses)>0:
+        while len(cnf.end_var)>0:
+            v,b=cnf.end_var[-1]
+            cnf.end_var.pop()
+            if cnf.state_var.get(v)==None:
+                if cnf.sol[v]!=b:
+                    return None
+            else:
+                cnf.set_val(v,b)
+        #print(cnf.end_clauses)
+        while len(cnf.end_clauses)>0:
+            c=cnf.end_clauses[-1]
+            cnf.end_clauses.pop()
+            if cnf.state_clauses.get(c)!=None:
+                if len(cnf.clauses[c])==0:
+                    return None
+                del cnf.state_clauses[c]
+                cnf.hist.append((1,c))
+                v=list(cnf.clauses[c])[0]
+                b=cnf.clauses[c][v]
+                if cnf.state_var.get(v)==None:
+                    if cnf.sol[v]!=b:
+                        return None
+                else:
+                    cnf.set_val(v,b)
 
     #print('after simplification')
     #print(cnf)
@@ -105,15 +143,22 @@ def satSolver(cnf):
         return dimacsOutput(cnf)
     
     b,v=cnf.select()
+    #if len(cnf.state_var)>70:
+    #    print(b,v,len(cnf.state_var))
     h=len(cnf.hist)
-    cnf.set_val(b,v)
+    cnf.set_val(v,b)
     y=satSolver(cnf)
     if y!=None:
         return y
     cnf.undo(h)
+    if cnf.count%100000<100:
+        global ti
+        print(cnf.count,time.time()-ti)
     #print('after undo')
     #print(cnf)
-    cnf.set_val(not b,v)
+    #if len(cnf.state_var)>70:
+    #    print(b,v,'!!!',len(cnf.state_var))
+    cnf.set_val(v,not b)
     return satSolver(cnf)
 
         
@@ -157,22 +202,28 @@ def check(name,ans): #compares my output to correct output
     return t
     
     
+global ti
 
 def solve(n=0): #
-    tests=['test1','sudoku1','sudoku2'] #list of test files
+    tests=['test1','test2','test3','test4','test5','sudoku1','sudoku2'] #list of test files
     
     pfile='Samples/'+tests[n]+'.txt'
     t = time.time()
+    global ti
+    ti=t
     cnf = dimacsInput(pfile)
+    cnf.prepare()
     ans=satSolver(cnf)
+    if ans==None:
+        ans='No solution'
     t = time.time() - t
 
     print('Answer:')
     print(ans)
     print('Time in seconds:')
     print(t)
-
+    
     print(check(tests[n],ans))
 
-solve(2)
+solve(4)
     
