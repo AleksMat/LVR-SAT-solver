@@ -22,3 +22,20 @@ Program is used for solving arbitrary SAT problem quite efficiently. It uses DPL
 * The answer will be written in file "fileName_solution.txt". Program will also inform you about it's running time.
 * Answer will be in requred form and numbers will be sorted by their absolute value. If formula won't have a solution, the answer will be *NOT SATISFIABLE*.
 
+### Sample generation ###
+
+In sample_gen, the generator.py file can be used to produce Dimacs formulas for the following SAT problem:
+Given a n x n chess board with several black queens, where can the white king be placed, so that he is not in check?
+
+To generate samples, the produceDIMACS function can be called with 3 arguments:
+ * queens, a list of tuples specifzing queen positions
+ * outFileName, the file name where the resulting formula is saved
+ * boardDim, the board dimension
+Alternatively, generateSample can be called with:
+ * dim, the board dimension and number of queens
+ * outName, the file name where the resulting formula is saved
+which selects dim unique random positions to place the queens.
+
+Note that the problem generated need not be satisfiable.
+
+

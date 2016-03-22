@@ -60,7 +60,7 @@ def generalCNF( boardDim ):
            
 import time
     
-def produceDIMACS( queens,  outFileName, boardDim = 8 ): #i, j = white king pos
+def produceDIMACS( queens,  outFileName, boardDim = 8 ): 
     clauses = generalCNF(boardDim)
     # add specifics from queens pos
     for (i,j) in queens:
