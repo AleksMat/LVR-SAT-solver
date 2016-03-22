@@ -19,3 +19,4 @@ Program is used for solving arbitrary SAT problem quite efficiently. It uses DPL
 	* Name of file with Dimacs formula. E.g. **solve("fileName.txt")** or **solve("fileName.cnf")**
 	* Index of a sample file listed in the program SAT.py. E.g. **solve(0)**, **solve(1)**,... 
 * The answer will be written in file "fileName_solution.txt". Program will also inform you about it's running time.
+* Answer will be in requred form and numbers will be sorted by their absolute value. If formula won't have a solution, the answer will be *NOT SATISFIABLE*.
