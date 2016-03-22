@@ -1,19 +1,14 @@
-# Can a white king be placed, that is not in check ?
+# Given a n x n chess board with some black queens placed, 
+# can a white king be placed, that is not in check ?
 # pijn = (i,j) th field is figure n,
-# n vals:
+# n values:
 ##    0 - white king
 ##    1 - black queen
-##    2 - EMPTY
-## ri : exists 
 
 nPcs = 2
 
 def generalCNF( boardDim ): 
     clauses = []
-    # each field has a piece
-##    for i in range(boardDim):
-##        for j in range(boardDim):
-##           clauses.append(["p{}{}{}".format(i,j,n) for n in range(nPcs)])
 
     #each field has at most 1 piece
     for i in range(boardDim):
@@ -22,24 +17,15 @@ def generalCNF( boardDim ):
                 for n2 in range(n+1,nPcs):
                     clauses.append(["-p{}.{}.{}".format(i,j,n), "-p{}.{}.{}".format(i,j,n2)])
     
-##    clauses.append(["r{}".format(i) for i in range(boardDim)]) # each col has wk
-##    clauses.append(["c{}".format(i) for i in range(boardDim)]) # each row has wk
 
-##    or i in range(boardDim):
-##        for n in range(nPcs):
-##            for j in range(boardDim):
-##                for j2 in range(j+1,boardDim):
-##                    clauses.append(["r{}".format(i) for i in range(boardDim)]) # each col has wk
+    # at least 1 white king on the board
+    clauses.append( [ "p{}.{}.0".format(i,j) for i in range(boardDim) for j in range(boardDim) ] ) 
 
-    clauses.append( [ "p{}.{}.0".format(i,j) for i in range(boardDim) for j in range(boardDim) ] ) # at least 1 wk
-
-    #at most 1 wk
+    # at most 1 white king on the board
     for i in range(boardDim):
         for j in range(boardDim):
             for i2 in range(i, boardDim):
                 for j2 in range(j + 1, boardDim):
-##                    if (i,j) == (i2,j2):
-##                        continue
                     clauses.append(["-p{}.{}.0".format(i,j), "-p{}.{}.0".format(i2,j2)])
 
     #not check as rook
@@ -72,7 +58,7 @@ def generalCNF( boardDim ):
     return clauses
               
            
-
+import time
     
 def produceDIMACS( queens,  outFileName, boardDim = 8 ): #i, j = white king pos
     clauses = generalCNF(boardDim)
@@ -84,6 +70,16 @@ def produceDIMACS( queens,  outFileName, boardDim = 8 ): #i, j = white king pos
     nclauses = len(clauses)
 
     f = open(outFileName,'w')
+
+    #comments in file
+    print( "c File: {}".format(outFileName), file = f )
+    print( "c Source: M. Alexandrov, J. Kukovec, Fakulteta za matematiko in fiziko, Ljubljana", file = f )
+    print( "c Description: King safe placement problem", file = f )
+    print( "c {}  generated with board size {} x {}".format(len("Description")*" ", boardDim, boardDim), file = f )
+    print( "c Creation date: {}, {} ".format(time.strftime("%d.%m.%Y"),time.strftime("%H:%M:%S")), file = f )
+
+
+    
     print( "p cnf {} {}".format(nvars, nclauses), file = f )
     for clause in clauses:
         #print(clause)
@@ -92,7 +88,7 @@ def produceDIMACS( queens,  outFileName, boardDim = 8 ): #i, j = white king pos
             if s[0]=='-':
                 neg = True
                 s = s[1:]
-            # (i,j,n) linearization
+            # (i,j,n) to distinct integers conversion
             s2 = s[1:].split('.')
             ID = 1 + ( int(s2[0]) + int(s2[1]) * boardDim ) + (boardDim**2) * int(s2[2])
             ID *= -1 if neg else 1
@@ -116,6 +112,12 @@ def test():
     dim3 = 40
     queens3 = random.sample( [(i,j) for i in range(dim3) for j in range(dim3)] , dim3 )
     produceDIMACS(queens3, fName3, dim3 )
+
+
+# call to generate a sample for a dim x dim board with dim randomlz placed queens
+def generateSample( dim, outName = "chessboardSAT.txt" ):
+    queens = random.sample( [(i,j) for i in range(dim) for j in range(dim)] , dim )
+    produceDIMACS(queens, outName, dim )
 
                     
 
