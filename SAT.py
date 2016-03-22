@@ -243,10 +243,11 @@ def solve(x=0):
              'aim-100-1_6-no-1', # Medium files, solved under a minute
              'flat200-89','bf0432-007','flat200-43',  # Hard files, solved under 5 min
              ]
-    if str(x)==x:
-        pfile=x
+    
+    if isinstance( x, int ) or x.isnumeric():
+        pfile='Samples/'+samples[int(x)]+'.txt'
     else:
-        pfile='Samples/'+samples[x]+'.txt'
+        pfile=x        
 
     t = time.time()
     cnf = dimacsInput(pfile)
@@ -264,4 +265,9 @@ def solve(x=0):
     f = open(outName,'w')
     print(ans,file=f)
     f.close()
+
+import sys
+
+if __name__ == '__main__':
+    solve( 0 if len(sys.argv) == 1 else sys.argv[1] )    
 
