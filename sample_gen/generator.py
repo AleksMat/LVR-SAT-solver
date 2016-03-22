@@ -114,7 +114,7 @@ def test():
 
     fName3 = "testDIMACS3.txt"
     dim3 = 40
-    queens3 = random.sample( [(i,j) for i in range(dim2) for j in range(dim2)] , dim3 )
+    queens3 = random.sample( [(i,j) for i in range(dim3) for j in range(dim3)] , dim3 )
     produceDIMACS(queens3, fName3, dim3 )
 
                     
