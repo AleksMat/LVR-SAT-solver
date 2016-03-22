@@ -1,4 +1,5 @@
 # SAT Solver
+# Project for course Logika v računalništvu
 # Created by: Matej Aleksandrov, Jure Kukovec
 # (c) March, 2016 
 #
@@ -171,7 +172,7 @@ def dimacsInput(pfile):  # Function that transforms SAT from Dimacs form to CNF 
             s = []
         elif line[0]!='c':
             s += line.strip().split()
-            if s[-1] != '0':
+            if len(s)==0 or s[-1] != '0':
                 continue
             
             for j in range (len(s)-1):
@@ -193,17 +194,53 @@ def dimacsOutput(cnf): # Function that creates output string from CNF class in c
             s+=str(-(i+1))+' '
     return s.strip()
 
+def checker(pfile,ans):  #Function that checks if answer is corrects.
+    if ans=='NOT SATISFIABLE':  # We can't easily check if answer doesn't exist.
+        return 'Formula is not satisfiable.'
+    a=ans.split()
+    sol=[0 for i in range (len(a)+1)]
+    for i in range (len(a)):
+        k=int(a[i])
+        sol[abs(k)]=k
+        
+    t=True
+    f=open(pfile,'r')
+    s = []
+    for line in f:
+        if line[0]!='c' and line[0]!='p':
+            s += line.strip().split()
+            if len(s)==0 or s[-1] != '0':
+                continue
+
+            t0=False
+            for j in range (len(s)-1):
+                k=int(s[j])
+                if k==sol[abs(k)]:
+                    t0=True
+                    break
+            if not t0:
+                t=False
+                break
+            s = []
+    f.close()
+
+    if t:
+        return 'Solution is correct.'
+    else:
+        return 'Solution is incorrect.'
+    
 
 def solve(x=0):
     #Main function for running SAT solver.
     #Input can be: - string as the name of the file, e.g. solve('fileName.txt'),
-    #              - number which is index the file in array samples below. 
+    #              - number which is index of the file in list "samples" (look below). 
 
     samples=['sudoku1','sudoku2',   # Files from class
-             'test1','test2',   # Trivial examples for testing correctness
-             'zebra_v155_c1135', 'aim-50-1_6-yes1-4', #Easy files solved in a few second or less.
-             'aim-100-1_6-no-1', # Medium file, solved in 40s
-             'bf0432-007',  # Hard file, solved in 200s
+             'test1','test2','test3',  # Trivial examples for testing correctness
+             'zebra_v155_c1135', 'aim-50-1_6-yes1-4', #Very easy files, solved in less than a sec.
+             'flat150-13','flat200-46', # Easy files, solved under 20s.
+             'aim-100-1_6-no-1', # Medium files, solved under a minute
+             'flat200-89','bf0432-007','flat200-43',  # Hard files, solved under 5 min
              ]
     if str(x)==x:
         pfile=x
@@ -221,6 +258,7 @@ def solve(x=0):
     outName = pfile[:-4]+'_solution.txt'
 
     print('Answer found in {} seconds. Written to: {}'.format(t,outName))
+    print(checker(pfile,ans))
 
     f = open(outName,'w')
     print(ans,file=f)
