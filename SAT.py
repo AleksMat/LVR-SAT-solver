@@ -193,27 +193,18 @@ def dimacsOutput(cnf): # Function that creates output string from CNF class in c
             s+=str(-(i+1))+' '
     return s.strip()
 
-'''
-def check(name,ans): #compares my output to correct output
-    pfile='Samples/'+name+'_solution.txt'
-    f=open(pfile,'r')
-    t= ''
-    for line in f:
-        s=line.strip()
-        if s==ans:
-            t='Answer is correct.'
-        else:
-            t='Answer is incorrect or there are multiple solutions.'
-    f.close()
-    return t'''
 
 def solve(x=0):
     #Main function for running SAT solver.
     #Input can be: - string as the name of the file, e.g. solve('fileName.txt'),
     #              - number which is index the file in array samples below. 
 
-    samples=['test1','test2','sudoku1','sudoku2',
-              'bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4', 'zebra_v155_c1135']
+    samples=['sudoku1','sudoku2',   # Files from class
+             'test1','test2',   # Trivial examples for testing correctness
+             'zebra_v155_c1135', 'aim-50-1_6-yes1-4', #Easy files solved in a few second or less.
+             'aim-100-1_6-no-1', # Medium file, solved in 40s
+             'bf0432-007',  # Hard file, solved in 200s
+             ]
     if str(x)==x:
         pfile=x
     else:
