@@ -205,7 +205,7 @@ def check(name,ans): #compares my output to correct output
 def solve(n=0): #
 
     tests=['test1','test2','sudoku1','sudoku2'] #list of test files
-    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4' ] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
+    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4', 'zebra_v155_c1135'] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
     
     pfile='Samples/'+tests[n]+'.txt'
     t = time.time()
@@ -244,3 +244,4 @@ def solveFile( fname ): # file should end in .txt
     f = open(outName,'w')
     print(ans if ans != None else "NOT SATISFIABLE" ,file = f)    
 
+#solve(4)
