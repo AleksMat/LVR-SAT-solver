@@ -1,21 +1,29 @@
+# SAT Solver
+# Created by: Matej Aleksandrov, Jure Kukovec
+# (c) March, 2016 
+#
+# Program for solving arbitrary SAT problem quite efficiently.
+
+
 import time
-import random
 
-class CNF:
-    def __init__(self,vnum,cnum):  #number of variables, number of clauses
-        self.state_var={i:True for i in range (vnum)}
-        self.state_clauses={i:True for i in range (cnum)}
+class CNF:  #Entire SAT formula is stored in class CNF.
+    
+    def __init__(self,vnum,cnum):  #Initialization takes number of variables and number of clauses from dimacs form.
+        
+        self.state_var={i:True for i in range (vnum)}      # Contains variables which are not yet determined. 
+        self.state_clauses={i:True for i in range (cnum)}  # Contains clauses which are not yet solved.
         self.var={}
-        self.var[True]=[{} for i in range (vnum)]
-        self.var[False]=[{} for i in range (vnum)]
-        self.clauses=[]
-        self.sol=[True for i in range (vnum)]
-        self.hist=[]
-        self.end_var=[]
-        self.end_clauses=[]
-        self.count=0 ###
+        self.var[True]=[{} for i in range (vnum)]          # Stores connections between non-negated variables and clauses.
+        self.var[False]=[{} for i in range (vnum)]         # Stores connections between negated variables and clauses.
+        self.clauses=[]                                    # Stores connections between clauses and variables.
+        self.sol=[True for i in range (vnum)]              # Stores solutions.
+        self.hist=[]                                       # Stores history for backtracking
+        self.end_var=[]                                    # Waiting list for variables that can be determined.
+        self.end_clauses=[]                                # Waiting list for clauses that can be solved.
 
-    def add(self, c): # adds clause c
+    def add(self, c): # Adds clause c to formula.
+        
         n=len(self.clauses)
         self.clauses.append({})
         t=False
@@ -30,7 +38,7 @@ class CNF:
         for v in self.clauses[n].keys():
             self.var[self.clauses[n][v]][v][n]=True
 
-    def prepare(self):
+    def prepare(self): # Prepares formula before the start of satSolver()
         for v in self.state_var.keys():
             if len(self.var[False][v])==0 or len(self.var[True][v])==0:
                 if len(self.var[False][v])==0:
@@ -42,7 +50,7 @@ class CNF:
                 self.end_clauses.append(c)
         
     
-    def __repr__(self):
+    def __repr__(self):     # Informative representation used during coding.
         s='------------------\n'
         s+=str(self.state_var)+'\n'
         s+=str(self.state_clauses)+'\n'
@@ -54,11 +62,10 @@ class CNF:
         s+='------------------'
         return s
 
-    def set_val(self,v,b):
+    def set_val(self,v,b):  # Method for setting value b to variable v.
         del self.state_var[v]
         self.hist.append((0,v))
         self.sol[v]=b
-        #print(self.var[b],v,b)
         for c in self.var[b][v].keys():
             try:
                 del self.state_clauses[c]
@@ -78,10 +85,9 @@ class CNF:
             if len(self.clauses[c])<=1:
                 self.end_clauses.append(c)
 
-    def undo(self,h):
+    def undo(self,h):   # Method that undoes history of algorithm.
         self.end_var=[]
         self.end_clauses=[]
-        self.count+=len(self.hist)-h
         while len(self.hist)>h:
             g=self.hist[-1]
             if g[0]==0:
@@ -95,6 +101,8 @@ class CNF:
             self.hist.pop()
         
     def select(self):
+        # Very important method which determines which variable will be chosen next for recursion.
+        # Currently takes the variable that is present in most number of unsolved clauses out all undetermined variables.
         m=-1
         for v in self.state_var.keys():
             m1=len(self.var[True][v])
@@ -104,82 +112,79 @@ class CNF:
                 u=v
                 t=(m1>m2)
         return (t,u)
-                
-        #return (False,list(self.state_var.keys())[0])
-        #return (random.choice([True,False]),random.choice(list(self.state_var.keys())))
 
       
 def satSolver(cnf):
-    #print(cnf,'!!!')
-    while len(cnf.end_var)>0 or len(cnf.end_clauses)>0:
+    # Function where the recursive algorithm runs.
+    # Each step algorthm makes (some sort of) DFS search for determening all variables and clauses that can be trivially
+    # solved. After that it makes a guess about the value of some variable and recursively repeats itself.  
+    
+    while len(cnf.end_var)>0 or len(cnf.end_clauses)>0: # Here DFS runs.
         while len(cnf.end_var)>0:
             v,b=cnf.end_var[-1]
             cnf.end_var.pop()
             if cnf.state_var.get(v)==None:
-                if cnf.sol[v]!=b:
-                    return None
+                if cnf.sol[v]!=b: # If we reach a contradiction.
+                    return None  
             else:
                 cnf.set_val(v,b)
-        #print(cnf.end_clauses)
+
         while len(cnf.end_clauses)>0:
             c=cnf.end_clauses[-1]
             cnf.end_clauses.pop()
             if cnf.state_clauses.get(c)!=None:
-                if len(cnf.clauses[c])==0:
+                if len(cnf.clauses[c])==0: # If we reach a contradiction.
                     return None
                 del cnf.state_clauses[c]
                 cnf.hist.append((1,c))
                 v=list(cnf.clauses[c])[0]
                 b=cnf.clauses[c][v]
                 if cnf.state_var.get(v)==None:
-                    if cnf.sol[v]!=b:
+                    if cnf.sol[v]!=b: # If we reach a contradiction.
                         return None
                 else:
                     cnf.set_val(v,b)
 
-    #print('after simplification')
-    #print(cnf)
-    if len(cnf.state_var)==0:
+    if len(cnf.state_var)==0: # In case we have found the solution.
         return dimacsOutput(cnf)
     
     b,v=cnf.select()
-    #if len(cnf.state_var)>70:
-    #    print(b,v,len(cnf.state_var))
-    h=len(cnf.hist)
-    cnf.set_val(v,b)
+    h=len(cnf.hist)   # Remembers current size of history list.
+    cnf.set_val(v,b)  # We set value b to variable v.
+    
     y=satSolver(cnf)
-    if y!=None:
+    if y!=None: # In case we have found the solution.
         return y
-    cnf.undo(h)
-    if cnf.count%100000<100:
-        global ti
-        print(cnf.count,time.time()-ti)
-    #print('after undo')
-    #print(cnf)
-    #if len(cnf.state_var)>70:
-    #    print(b,v,'!!!',len(cnf.state_var))
+
+    cnf.undo(h)  #Undoes history.
     cnf.set_val(v,not b)
     return satSolver(cnf)
 
         
-def dimacsInput(pFile):  # transforms SAT from Dimacs form to CNF class, input is file name
-    f=open(pFile,'r')
+def dimacsInput(pfile):  # Function that transforms SAT from Dimacs form to CNF class, input is file name.
+    f=open(pfile,'r')
+    s = []
     for line in f:
         if line[0]=='p':
             s=line.strip().split()
             cnf=CNF(int(s[2]),int(s[3]))
+            s = []
         elif line[0]!='c':
-            s=line.strip().split()
+            s += line.strip().split()
+            if s[-1] != '0':
+                continue
+            
             for j in range (len(s)-1):
                 if s[j][0]=='-':
                     s[j]=(False,int(s[j][1:])-1)
                 else:
                     s[j]=(True,int(s[j])-1)
             cnf.add(s[:-1])
+            s = []
     f.close()
     return cnf
 
-def dimacsOutput(cnf):
+def dimacsOutput(cnf): # Function that creates output string from CNF class in case solution is found.
     s=''
     for i in range (len(cnf.sol)):
         if cnf.sol[i]:
@@ -188,7 +193,7 @@ def dimacsOutput(cnf):
             s+=str(-(i+1))+' '
     return s.strip()
 
-
+'''
 def check(name,ans): #compares my output to correct output
     pfile='Samples/'+name+'_solution.txt'
     f=open(pfile,'r')
@@ -200,17 +205,21 @@ def check(name,ans): #compares my output to correct output
         else:
             t='Answer is incorrect or there are multiple solutions.'
     f.close()
-    return t
+    return t'''
 
-def solve(n=0): #
+def solve(x=0):
+    #Main function for running SAT solver.
+    #Input can be: - string as the name of the file, e.g. solve('fileName.txt'),
+    #              - number which is index the file in array samples below. 
 
-    tests=['test1','test2','sudoku1','sudoku2'] #list of test files
-    tests += ['bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4', 'zebra_v155_c1135'] #source> http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html
-    
-    pfile='Samples/'+tests[n]+'.txt'
+    samples=['test1','test2','sudoku1','sudoku2',
+              'bf0432-007', 'aim-100-1_6-no-1', 'aim-50-1_6-yes1-4', 'zebra_v155_c1135']
+    if str(x)==x:
+        pfile=x
+    else:
+        pfile='Samples/'+samples[x]+'.txt'
+
     t = time.time()
-    global ti
-    ti=t
     cnf = dimacsInput(pfile)
     cnf.prepare()
     ans=satSolver(cnf)
@@ -218,30 +227,11 @@ def solve(n=0): #
         ans='NOT SATISFIABLE'
     t = time.time() - t
 
-    print('Answer:')
-    print(ans)
+    outName = pfile[:-4]+'_solution.txt'
 
-    f = open(pfile[:-4]+'_solution.txt','w')
-    print(ans,file = f)
-    
-    print('Time in seconds:')
-    print(t)
-    
-    print(check(tests[n],ans))
-    
-
-def solveFile( fname ): # file should end in .txt
-    t = time.time()
-    cnf = dimacsInput(fname)
-    ans=satSolver(cnf)
-    t = time.time() - t
-
-    outName = fname[:-4]+'_solution.txt'
-
-
-    print('Answer found in {} seconds. Written to: {}'.format(t,fname))
+    print('Answer found in {} seconds. Written to: {}'.format(t,outName))
 
     f = open(outName,'w')
-    print(ans if ans != None else "NOT SATISFIABLE" ,file = f)    
+    print(ans,file=f)
+    f.close()
 
-#solve(4)
