@@ -4,6 +4,7 @@
 # (c) March, 2016 
 #
 # Program for solving arbitrary SAT problem quite efficiently.
+# Uses DPLL algorithm with DFS searches over variables and clauses.
 
 
 import time
